@@ -1,0 +1,124 @@
+---
+title: "Troubleshooting"
+description: "Solutions to common issues with Huayu Buddy."
+---
+
+## Realtime panel
+
+<AccordionGroup>
+  <Accordion title="Connection fails in the Realtime panel">
+    The Realtime panel requires a valid OpenAI API key to issue ephemeral session tokens.
+
+    1. Open your `.env` file at the project root.
+    2. Confirm `OPENAI_API_KEY` is set and starts with `sk-`.
+    3. Restart the server after editing `.env`.
+
+    You can verify the key is being read by checking the health endpoint:
+
+    ```bash
+    curl http://localhost:8787/api/health
+    ```
+
+    A successful response looks like `{"ok":true,"openai":true,"tts":true,...}`.
+  </Accordion>
+
+  <Accordion title="No audio output">
+    The app requires microphone access to record speech and plays audio through the browser.
+
+    1. Click the lock icon in your browser's address bar.
+    2. Set **Microphone** to **Allow**.
+    3. Reload the page.
+
+    If audio playback is silent but the transcript shows responses, check your system volume and confirm the browser tab is not muted.
+  </Accordion>
+
+  <Accordion title="Voice not working in the Realtime panel">
+    Custom voices (nova, shimmer, echo, etc.) are only supported with the `gpt-4o-realtime-preview` model. The `gpt-realtime-mini` model does not support voice selection.
+
+    - If you have the **gpt-realtime-mini** toggle switched ON, turn it **OFF** to re-enable custom voice selection.
+    - With the toggle OFF, the app uses `gpt-4o-mini-realtime-preview` and your selected voice will apply.
+  </Accordion>
+</AccordionGroup>
+
+## Electron and builds
+
+<AccordionGroup>
+  <Accordion title="Windows packaging fails">
+    `npm run electron:build` targets Windows `.exe` output and must run on Windows (or on Linux with Wine installed).
+
+    - **On Windows**: run `npm run electron:build` directly — no additional dependencies required.
+    - **On Linux/macOS**: install [Wine](https://www.winehq.org/) and then run the build command, or build on a Windows machine and copy the output `dist/HuayuBuddy-{version}.exe`.
+  </Accordion>
+
+  <Accordion title="Sandbox errors on Linux">
+    Electron requires the Chrome SUID sandbox to be set up, which is often unavailable in containers and on devices like Raspberry Pi.
+
+    Development mode (`npm run electron:dev`) disables the sandbox automatically via `--no-sandbox` and `--disable-setuid-sandbox` flags — no manual configuration needed.
+
+    If you are running Electron outside of the dev runner, pass the flags explicitly:
+
+    ```bash
+    electron . --no-sandbox --disable-setuid-sandbox
+    ```
+  </Accordion>
+
+  <Accordion title="API key not found when running the portable .exe">
+    The portable executable reads `.env` from the folder that contains the `.exe` (the `PORTABLE_EXECUTABLE_DIR` path). It does **not** read from your home directory or system environment.
+
+    Place a `.env` file next to `HuayuBuddy-{version}.exe`:
+
+    ```
+    dist/
+    ├── HuayuBuddy-4.0.0.exe
+    └── .env
+    ```
+
+    Minimal `.env` content:
+
+    ```bash
+    OPENAI_API_KEY=sk-your_key_here
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## HSK vocabulary
+
+<AccordionGroup>
+  <Accordion title="HSK words not loading">
+    The server loads vocabulary from `server/data/HSK_1-5.xlsx` at startup. If the file is missing or the path is wrong, the `/api/hsk` endpoint returns an empty list.
+
+    1. Confirm the file exists at `server/data/HSK_1-5.xlsx`.
+    2. To use a custom path, set `HSK_XLSX` in your `.env`:
+
+       ```bash
+       HSK_XLSX=/absolute/path/to/your/HSK_1-5.xlsx
+       ```
+
+    3. Check the diagnostics endpoint to see the resolved path:
+
+       ```bash
+       curl http://localhost:8787/api/diag/fs
+       ```
+
+       The response includes `HSK_XLSX` and an `exists` field confirming whether the file was found.
+  </Accordion>
+</AccordionGroup>
+
+## React app and API connectivity
+
+<AccordionGroup>
+  <Accordion title="React app not connecting to the API">
+    In development mode, the React app proxies API requests to `:8787` via the `proxy` field in `package.json`. If API calls fail:
+
+    1. Confirm the Express server is running and listening on port `8787`.
+    2. Check `package.json` contains:
+
+       ```json
+       "proxy": "http://localhost:8787"
+       ```
+
+    3. If you changed the API port with the `PORT` variable, update the `proxy` value to match and restart the React dev server.
+
+    In production mode (`npm run start:prod`), the React app is served by Express itself, so no proxy is involved — just confirm Express is running on the expected port.
+  </Accordion>
+</AccordionGroup>

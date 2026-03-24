@@ -1,0 +1,100 @@
+---
+title: "Web deployment"
+description: "Run Huayu Buddy as a web application in development or production mode."
+---
+
+<Info>
+  **Prerequisites:**
+  - Node.js 18 or higher
+  - An `OPENAI_API_KEY` from the [OpenAI platform](https://platform.openai.com/api-keys)
+</Info>
+
+## Environment setup
+
+Create a `.env` file in the project root before starting the server:
+
+```bash
+OPENAI_API_KEY=sk-your_key_here
+```
+
+The server searches several candidate paths for `.env` on startup, so placing it at the repo root is the standard approach.
+
+## Development mode
+
+Development mode runs the React dev server and the Express API concurrently, with hot-reload for both.
+
+<Steps>
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+
+  <Step title="Start the development servers">
+    ```bash
+    npm run dev
+    ```
+
+    This command starts two processes in parallel:
+
+    | Process | Port | Label |
+    |---------|------|-------|
+    | React dev server (`react-scripts start`) | `:3000` | `UI` |
+    | Express API (`server/index.js`) | `:8787` | `API` |
+
+    Open `http://localhost:3000` in your browser. The React app proxies API requests to `:8787` automatically via the `proxy` field in `package.json`.
+  </Step>
+</Steps>
+
+<Tip>
+  Install `nodemon` globally (`npm install -g nodemon`) to get automatic server restarts when you edit files in `server/`.
+</Tip>
+
+## Production mode
+
+Production mode builds the React app once, then serves it alongside the API from a single Express process.
+
+<Steps>
+  <Step title="Build and start">
+    ```bash
+    npm run start:prod
+    ```
+
+    This runs `npm run build` (creates `build/`) and then starts the Express server. The server:
+
+    - Serves the React build as static files at `/`
+    - Exposes all API endpoints at `/api/*`
+    - Listens on port `8787` by default
+  </Step>
+
+  <Step title="Open the app">
+    Navigate to `http://localhost:8787`.
+  </Step>
+</Steps>
+
+## Port configuration
+
+You can override the API server port with the `PORT` environment variable:
+
+```bash
+PORT=9000 npm run start:prod
+```
+
+<Note>
+  In development mode the React dev server always starts on `:3000`. Only the Express API port is controlled by `PORT`.
+</Note>
+
+## API endpoints
+
+The Express server exposes the following routes:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | `GET` | OpenAI connectivity check |
+| `/api/realtime-session` | `POST` | Issues ephemeral Realtime API token |
+| `/api/chat` | `POST` | Standard chat completion |
+| `/api/chat/stream` | `POST` | Streaming chat (SSE) |
+| `/api/tts` | `POST` | Text-to-speech (returns MP3) |
+| `/api/whisper` | `POST` | Speech-to-text via Whisper |
+| `/api/hsk` | `GET` | HSK vocabulary list |
+| `/api/diag/fs` | `GET` | Filesystem diagnostics |

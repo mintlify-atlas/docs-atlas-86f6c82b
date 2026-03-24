@@ -1,0 +1,78 @@
+---
+title: "Conversation mode"
+description: "Hold-to-talk microphone input, Whisper speech recognition, AI chat completion, and multi-script Mandarin output — all in one flow."
+---
+
+Conversation mode is the core learning loop in Huayu Buddy. You speak (or type) in Mandarin or English, and the AI tutor responds with natural Mandarin audio plus a multi-script display showing Hanzi, Pinyin, and optional English.
+
+## How the conversation flow works
+
+<Steps>
+  <Step title="Select your HSK level and topic">
+    Open the **HSK Vocabulary Loader** and toggle one or more HSK levels (1–5). The words you load bias the tutor's vocabulary for the session. Optionally set a topic focus — such as *ordering food* or *daily life* — in the **Persona** panel.
+  </Step>
+  <Step title="Start the conversation">
+    Click **Start Conversation**. The tutor sends a warm greeting in Mandarin and asks you an opening question to kick off the dialogue.
+  </Step>
+  <Step title="Hold to talk">
+    Press and hold the **Hold to Talk** button. Speak in Mandarin or English. Release the button when you're done — your audio is sent to OpenAI Whisper for speech-to-text transcription.
+  </Step>
+  <Step title="AI processes your input">
+    The transcribed text is forwarded to a chat completion model (`gpt-4o-mini` by default) along with the system prompt built from your persona settings and loaded vocabulary. The last 8 turns of conversation history are included for context.
+  </Step>
+  <Step title="Response is rendered">
+    The tutor's reply is parsed into Hanzi sentences paired with Pinyin. An English translation is appended when the persona's English policy is set to `always` or `auto`. The response appears in the chat panel.
+  </Step>
+  <Step title="Audio plays back">
+    Each Hanzi sentence is spoken aloud using OpenAI TTS. If the OpenAI TTS request fails or is unavailable, the browser's built-in Web Speech API is used as a fallback. The 3D avatar animates in sync with the audio.
+  </Step>
+</Steps>
+
+## Multi-script display
+
+Every tutor response is broken into one or more segments. Each segment shows up to three lines depending on your [persona's English setting](/features/persona):
+
+| Line | Content | When shown |
+|------|---------|------------|
+| 1 | Hanzi (simplified Chinese characters) | Always |
+| 2 | Pinyin with tone marks | Always |
+| 3 | English translation (brief) | `always` or `auto` |
+
+Pinyin is generated from the Hanzi using the bundled `hanziToPinyin` utility. If the model supplies its own Pinyin that differs from the auto-generated version, the model's version is preferred.
+
+<Tip>
+  Set the **Speak English too** checkbox in the conversation toolbar to also hear the English translation spoken aloud, not just displayed.
+</Tip>
+
+## Microphone permissions
+
+<Warning>
+  Huayu Buddy requests microphone access the first time you press **Hold to Talk**. You must allow microphone access in your browser or operating system for voice input to work. If the browser blocks the microphone, a status message will display: *Mic failed: permissions or device not found*.
+</Warning>
+
+You can also type directly into the input field at the bottom of the conversation panel and press **Enter** or **Send** to submit text without using the microphone.
+
+## Text input
+
+You can type in Chinese characters, Pinyin, or English. The tutor always responds in Mandarin regardless of the language you use.
+
+## Audio unlock
+
+Browsers require a user gesture before audio can play. Huayu Buddy automatically unlocks audio on the first click or touch. If audio does not play, click the **Enable Audio** button in the conversation toolbar to trigger the unlock manually.
+
+## Frequently asked questions
+
+<AccordionGroup>
+  <Accordion title="Which model handles the chat completion?">
+    `gpt-4o-mini` by default. The model is specified in the API call inside `Conversation.jsx`. You can swap it by modifying the server-side chat endpoint or by updating the model ID in the fetch payload.
+  </Accordion>
+  <Accordion title="What happens if the recording is too short?">
+    Recordings shorter than roughly 120 ms are discarded and the status bar displays *Recording too short — try again*. Hold the button for at least half a second to ensure a usable recording.
+  </Accordion>
+  <Accordion title="Can I use the conversation panel without a microphone?">
+    Yes. Use the text input field at the bottom of the panel to type your messages. All features except voice input work the same way.
+  </Accordion>
+  <Accordion title="Does conversation history persist between sessions?">
+    No. The in-memory chat history clears when you refresh the page or click **Start Conversation** again. Use the **HSK Review** tab to revisit phrases from the current session.
+  </Accordion>
+</AccordionGroup>

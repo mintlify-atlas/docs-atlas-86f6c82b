@@ -1,0 +1,45 @@
+---
+title: "API overview"
+description: "Base URL, authentication, and a complete index of all Huayu Buddy API endpoints."
+---
+
+The Huayu Buddy server exposes a REST API that the front-end (and any external client) uses to drive conversation, speech, vocabulary, and health features. All routes are served by the Express server.
+
+## Base URL
+
+```
+http://localhost:8787
+```
+
+The port defaults to `8787`. Override it with the `PORT` environment variable before starting the server.
+
+## Authentication
+
+All endpoints that call OpenAI require a valid `OPENAI_API_KEY` set on the **server**. You do not pass the key in individual requests — the server reads it from its environment at startup.
+
+<Warning>
+Requests will fail with a `400` or `500` error if `OPENAI_API_KEY` is missing or invalid.
+</Warning>
+
+## Content types
+
+| Endpoint | Request `Content-Type` | Response `Content-Type` |
+|---|---|---|
+| `/api/chat`, `/api/chat/stream`, `/api/tts`, `/api/realtime-session` | `application/json` | `application/json` (or `text/event-stream` for streaming) |
+| `/api/whisper`, `/api/stt` | `audio/webm`, `audio/ogg`, `audio/wav`, `audio/mpeg`, or `application/octet-stream` | `application/json` |
+| `/api/hsk`, `/api/health`, `/api/diag/fs` | — (GET, no body) | `application/json` |
+| `/api/tts` response | — | `audio/mpeg` |
+
+## Endpoints
+
+| Method | Path | Description | Reference |
+|---|---|---|---|
+| `POST` | `/api/chat` | Non-streaming chat completion | [Chat completion](/api/chat) |
+| `POST` | `/api/chat/stream` | Streaming chat completion via Server-Sent Events | [Chat completion](/api/chat) |
+| `POST` | `/api/tts` | Convert text to MP3 audio | [Text to speech](/api/tts) |
+| `POST` | `/api/whisper` | Transcribe audio to text (basic) | [Speech to text](/api/stt) |
+| `POST` | `/api/stt` | Transcribe audio to text (with language hint) | [Speech to text](/api/stt) |
+| `POST` | `/api/realtime-session` | Issue an ephemeral OpenAI Realtime session token | [Realtime session](/api/realtime-session) |
+| `GET` | `/api/hsk` | Fetch HSK vocabulary items | [HSK vocabulary](/api/hsk) |
+| `GET` | `/api/health` | Check server and OpenAI connectivity | [Health check](/api/health) |
+| `GET` | `/api/diag/fs` | Inspect resolved filesystem paths | [Health check](/api/health) |

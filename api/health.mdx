@@ -1,0 +1,142 @@
+---
+title: "Health check"
+description: "Verify server status and OpenAI connectivity, and inspect resolved filesystem paths for debugging."
+---
+
+Two diagnostic endpoints help you confirm the server is running correctly and troubleshoot configuration problems.
+
+## GET /api/health
+
+Performs a live connectivity check against OpenAI and returns a status summary. Use this endpoint for monitoring, readiness probes, or to confirm your API key is working.
+
+### What it checks
+
+1. **OpenAI models list** — calls `GET https://api.openai.com/v1/models`. Sets `openai: true` on success.
+2. **TTS synthesis** — synthesizes the word `"ping"` using the `alloy` voice. Sets `tts: true` if a non-empty MP3 is returned.
+
+`ok` is `true` only when both `openai` and `tts` are `true`.
+
+<Note>
+The `whisper` field is always `true` in the current implementation — it is reserved for a future live STT check.
+</Note>
+
+### Response
+
+Always returns HTTP `200`, even if the checks fail. Inspect the field values to determine health status.
+
+<ResponseField name="ok" type="boolean">
+  `true` when both OpenAI connectivity and TTS synthesis succeeded.
+</ResponseField>
+
+<ResponseField name="openai" type="boolean">
+  `true` if the server can reach the OpenAI API and list models.
+</ResponseField>
+
+<ResponseField name="tts" type="boolean">
+  `true` if speech synthesis returned non-empty audio.
+</ResponseField>
+
+<ResponseField name="whisper" type="boolean">
+  Reserved. Always `true`.
+</ResponseField>
+
+<ResponseField name="ts" type="number">
+  Unix timestamp (milliseconds) of when the health check ran.
+</ResponseField>
+
+<CodeGroup>
+
+```bash cURL
+curl http://localhost:8787/api/health
+```
+
+```json Healthy
+{
+  "ok": true,
+  "openai": true,
+  "tts": true,
+  "whisper": true,
+  "ts": 1711000000000
+}
+```
+
+```json Unhealthy (missing API key)
+{
+  "ok": false,
+  "openai": false,
+  "tts": false,
+  "whisper": true,
+  "ts": 1711000000000
+}
+```
+
+</CodeGroup>
+
+---
+
+## GET /api/diag/fs
+
+Returns the filesystem paths the server resolved at startup and whether each path exists on disk. Use this endpoint to debug missing data files, incorrect build paths, or packaging issues.
+
+### Response
+
+<ResponseField name="cwd" type="string">
+  Current working directory of the Node.js process.
+</ResponseField>
+
+<ResponseField name="__dirname" type="string">
+  Directory of the server entry file.
+</ResponseField>
+
+<ResponseField name="FRONT_PUBLIC" type="string">
+  Resolved path to the CRA `public/` directory.
+</ResponseField>
+
+<ResponseField name="FRONT_BUILD" type="string">
+  Resolved path to the front-end production build directory.
+</ResponseField>
+
+<ResponseField name="SERVER_DATA" type="string">
+  Resolved path to the `server/data/` directory.
+</ResponseField>
+
+<ResponseField name="HSK_XLSX" type="string">
+  Resolved path to the `HSK_1-5.xlsx` vocabulary file.
+</ResponseField>
+
+<ResponseField name="exists" type="object">
+  Boolean flags indicating whether each path exists on disk.
+  <Expandable title="properties">
+    <ResponseField name="FRONT_PUBLIC" type="boolean">Whether the public directory exists.</ResponseField>
+    <ResponseField name="FRONT_BUILD" type="boolean">Whether the build directory exists.</ResponseField>
+    <ResponseField name="SERVER_DATA" type="boolean">Whether the data directory exists.</ResponseField>
+    <ResponseField name="HSK_XLSX" type="boolean">Whether the vocabulary XLSX file exists.</ResponseField>
+    <ResponseField name="public/head-avatar.glb (CRA)" type="boolean">Whether the 3D avatar asset exists in the public directory.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<CodeGroup>
+
+```bash cURL
+curl http://localhost:8787/api/diag/fs
+```
+
+```json Response
+{
+  "cwd": "/app",
+  "__dirname": "/app/server",
+  "FRONT_PUBLIC": "/app/public",
+  "FRONT_BUILD": "/app/build",
+  "SERVER_DATA": "/app/server/data",
+  "HSK_XLSX": "/app/server/data/HSK_1-5.xlsx",
+  "exists": {
+    "FRONT_PUBLIC": true,
+    "FRONT_BUILD": true,
+    "SERVER_DATA": true,
+    "HSK_XLSX": true,
+    "public/head-avatar.glb (CRA)": true
+  }
+}
+```
+
+</CodeGroup>

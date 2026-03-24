@@ -1,0 +1,122 @@
+---
+title: "Speech to text"
+description: "Transcribe audio recordings to text using OpenAI Whisper."
+---
+
+Two endpoints handle audio transcription. `/api/whisper` is the basic variant; `/api/stt` is identical but additionally accepts a language hint.
+
+<Note>
+`/api/whisper` and `/api/stt` share the same underlying Whisper model. Use `/api/stt` when you want to pass a language hint to improve accuracy.
+</Note>
+
+## POST /api/whisper
+
+Transcribe raw audio bytes to text.
+
+### Request
+
+Send the audio file as the **raw request body** — not as a multipart form. Set the `Content-Type` header to the audio MIME type.
+
+<ParamField header="Content-Type" type="string" required>
+  MIME type of the audio body. Accepted values:
+  - `audio/webm`
+  - `audio/ogg`
+  - `audio/wav`
+  - `audio/mpeg`
+  - `application/octet-stream`
+</ParamField>
+
+The request body size limit is **25 MB**.
+
+### Response
+
+<ResponseField name="text" type="string">
+  The transcribed text. Empty string if no speech was detected.
+</ResponseField>
+
+<CodeGroup>
+
+```bash cURL
+curl --request POST \
+  --url http://localhost:8787/api/whisper \
+  --header 'Content-Type: audio/webm' \
+  --data-binary '@recording.webm'
+```
+
+```json Response
+{
+  "text": "我想学普通话"
+}
+```
+
+</CodeGroup>
+
+---
+
+## POST /api/stt
+
+Identical to `/api/whisper` with the addition of an optional language hint.
+
+### Request
+
+Same raw audio body as `/api/whisper`, plus:
+
+<ParamField header="x-stt-language" type="string">
+  BCP-47 language code hint (e.g. `zh`, `en`). Truncated to 16 characters. Improves transcription accuracy when the language is known.
+</ParamField>
+
+<ParamField query="language" type="string">
+  Alternative to the `x-stt-language` header. The header takes precedence if both are provided.
+</ParamField>
+
+<Tip>
+For Mandarin Chinese, pass `zh` as the language hint. This reduces the chance of Whisper guessing the wrong language on short or quiet recordings.
+</Tip>
+
+### Response
+
+Same as `/api/whisper`.
+
+<ResponseField name="text" type="string">
+  The transcribed text.
+</ResponseField>
+
+<CodeGroup>
+
+```bash Header
+curl --request POST \
+  --url http://localhost:8787/api/stt \
+  --header 'Content-Type: audio/webm' \
+  --header 'x-stt-language: zh' \
+  --data-binary '@recording.webm'
+```
+
+```bash Query param
+curl --request POST \
+  --url 'http://localhost:8787/api/stt?language=zh' \
+  --header 'Content-Type: audio/webm' \
+  --data-binary '@recording.webm'
+```
+
+```json Response
+{
+  "text": "你好，我叫小明"
+}
+```
+
+</CodeGroup>
+
+### Error response
+
+```json 400
+{
+  "error": "no audio body"
+}
+```
+
+```json 400
+{
+  "error": "stt failed",
+  "detail": "<error message from OpenAI>"
+}
+```

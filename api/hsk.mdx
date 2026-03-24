@@ -1,0 +1,104 @@
+---
+title: "HSK vocabulary"
+description: "Fetch HSK 1–5 vocabulary items, optionally filtered by level."
+---
+
+## GET /api/hsk
+
+Returns vocabulary entries loaded from the `HSK_1-5.xlsx` workbook at server startup. Use the `levels` query parameter to filter by one or more HSK levels.
+
+<Note>
+The vocabulary list is loaded once at startup from `server/data/HSK_1-5.xlsx` (or the path set by the `HSK_XLSX` environment variable). The response reflects whatever data is in that file.
+</Note>
+
+### Query parameters
+
+<ParamField query="levels" type="string">
+  Comma-separated list of HSK level numbers to include. Valid values: `1`, `2`, `3`, `4`, `5`.
+
+  Omit this parameter to return all items across all levels.
+
+  **Example:** `?levels=1,2` returns only HSK 1 and HSK 2 words.
+</ParamField>
+
+### Response
+
+<ResponseField name="source" type="string">
+  Absolute path to the XLSX file the server loaded.
+</ResponseField>
+
+<ResponseField name="count" type="number">
+  Total number of items in the response (after filtering).
+</ResponseField>
+
+<ResponseField name="items" type="object[]">
+  Array of vocabulary entries.
+  <Expandable title="properties">
+    <ResponseField name="level" type="number">
+      HSK level (1–5).
+    </ResponseField>
+    <ResponseField name="hanzi" type="string">
+      Simplified Chinese characters.
+    </ResponseField>
+    <ResponseField name="pinyin" type="string">
+      Romanized pronunciation with tone marks.
+    </ResponseField>
+    <ResponseField name="english" type="string">
+      Brief English meaning.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<CodeGroup>
+
+```bash All levels
+curl http://localhost:8787/api/hsk
+```
+
+```bash HSK 1 and 2 only
+curl 'http://localhost:8787/api/hsk?levels=1,2'
+```
+
+```bash Single level
+curl 'http://localhost:8787/api/hsk?levels=3'
+```
+
+```json Response
+{
+  "source": "/app/server/data/HSK_1-5.xlsx",
+  "count": 3,
+  "items": [
+    {
+      "level": 1,
+      "hanzi": "你好",
+      "pinyin": "nǐ hǎo",
+      "english": "hello"
+    },
+    {
+      "level": 1,
+      "hanzi": "谢谢",
+      "pinyin": "xiè xie",
+      "english": "thank you"
+    },
+    {
+      "level": 2,
+      "hanzi": "学习",
+      "pinyin": "xuéxí",
+      "english": "to study / to learn"
+    }
+  ]
+}
+```
+
+</CodeGroup>
+
+### Error response
+
+If the XLSX file cannot be read or parsing fails, the server returns an empty `items` array (not an HTTP error). If the route itself throws, you may receive:
+
+```json 500
+{
+  "error": "hsk failed",
+  "detail": "<error message>"
+}
+```

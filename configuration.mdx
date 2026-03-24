@@ -1,0 +1,161 @@
+---
+title: Configuration
+description: Environment variables and runtime options for Huayu Buddy.
+---
+
+Huayu Buddy is configured through environment variables. In development you set these in a `.env` file at the project root. In production Electron builds you place the file next to the executable.
+
+## .env file placement
+
+The server searches for a `.env` file in the following locations, in order, and loads the first one it finds:
+
+1. `<project-root>/.env.local`
+2. `<project-root>/.env`
+3. `<server-dir>/.env.local`
+4. `<server-dir>/.env`
+5. `<process.cwd()>/.env.local`
+6. `<process.cwd()>/.env`
+
+For most development workflows, placing `.env` in the **project root** is correct.
+
+<Note>
+  **Electron portable builds** — When running as a Windows portable executable, the server also checks the directory that contains the `.exe` file (exposed by the `PORTABLE_EXECUTABLE_DIR` environment variable). Place your `.env` next to `HuayuBuddy-<version>.exe` to configure a portable installation without modifying the package.
+</Note>
+
+## Environment variables
+
+### `OPENAI_API_KEY`
+
+**Required.** Your OpenAI secret key. All AI features — chat, TTS, STT, and Realtime — authenticate with this key.
+
+```bash
+OPENAI_API_KEY=sk-your_key_here
+```
+
+<Warning>
+  The server will refuse to issue Realtime session tokens and throw errors on AI endpoints if this variable is missing or invalid.
+</Warning>
+
+---
+
+### `OPENAI_CHAT_MODEL`
+
+The GPT model used for conversation completions.
+
+| | |
+|---|---|
+| **Default** | `gpt-4o-mini` |
+| **Example** | `gpt-4o` |
+
+```bash
+OPENAI_CHAT_MODEL=gpt-4o
+```
+
+---
+
+### `OPENAI_TTS_MODEL`
+
+The model used for text-to-speech audio generation on the `POST /api/tts` endpoint.
+
+| | |
+|---|---|
+| **Default** | `tts-1` |
+| **Example** | `tts-1-hd` |
+
+```bash
+OPENAI_TTS_MODEL=tts-1-hd
+```
+
+---
+
+### `OPENAI_STT_MODEL`
+
+The model used for speech-to-text transcription on the `POST /api/stt` and `POST /api/whisper` endpoints.
+
+| | |
+|---|---|
+| **Default** | `whisper-1` |
+
+```bash
+OPENAI_STT_MODEL=whisper-1
+```
+
+---
+
+### `PORT`
+
+The port the Express API server listens on.
+
+| | |
+|---|---|
+| **Default** | `8787` |
+
+```bash
+PORT=8787
+```
+
+<Tip>
+  The React development server always runs on `:3000` and proxies API requests to the `PORT` value set in `package.json`. If you change `PORT`, update the `"proxy"` field in `package.json` to match.
+</Tip>
+
+---
+
+### `HOST`
+
+The network interface the Express API server binds to.
+
+| | |
+|---|---|
+| **Default** | `0.0.0.0` (all interfaces) |
+
+```bash
+HOST=127.0.0.1
+```
+
+Set `HOST=127.0.0.1` to restrict the API to loopback only, which is the default for Electron production builds.
+
+---
+
+### `HSK_XLSX`
+
+Absolute or relative path to a custom HSK word list Excel file. When omitted, the server loads `server/data/HSK_1-5.xlsx` from the project.
+
+```bash
+HSK_XLSX=/path/to/my-hsk-wordlist.xlsx
+```
+
+The file must have sheets with columns named `hanzi`, `pinyin`, `english`, and `level` (case-insensitive). The server also accepts common Chinese-language column headers (`汉字`, `拼音`, `释义`, `级别`).
+
+---
+
+## TTS voice options
+
+The `POST /api/tts` endpoint accepts a `voice` parameter. The following values are supported:
+
+| Voice | Character |
+|---|---|
+| `alloy` | Neutral, balanced (default) |
+| `nova` | Warm, expressive |
+| `shimmer` | Soft, clear |
+| `echo` | Resonant, measured |
+| `onyx` | Deep, authoritative |
+| `fable` | Expressive, story-like |
+| `ash` | Calm, conversational |
+| `sage` | Steady, thoughtful |
+| `coral` | Bright, friendly |
+
+Voice selection is only active in **Standard TTS mode**. In Realtime mode with `gpt-4o-realtime-preview`, the voice is set when the session is created. Voice selection is unavailable when using `gpt-realtime-mini`.
+
+## Minimal .env example
+
+```bash
+# Required
+OPENAI_API_KEY=sk-your_key_here
+
+# Optional overrides
+OPENAI_CHAT_MODEL=gpt-4o
+OPENAI_TTS_MODEL=tts-1-hd
+OPENAI_STT_MODEL=whisper-1
+PORT=8787
+HOST=0.0.0.0
+```

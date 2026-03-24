@@ -1,0 +1,93 @@
+---
+title: "Text to speech"
+description: "Convert a string of text into an MP3 audio file using OpenAI's TTS model."
+---
+
+## POST /api/tts
+
+Send a text string and receive binary MP3 audio in the response body.
+
+### Request body
+
+<ParamField body="text" type="string" required>
+  The text to synthesize. Cannot be empty.
+</ParamField>
+
+<ParamField body="voice" type="string" default="alloy">
+  The voice to use for synthesis. Must be one of the supported voices listed below. Unrecognized values fall back to `alloy`.
+</ParamField>
+
+### Supported voices
+
+| Voice | Character |
+|---|---|
+| `alloy` | Neutral, balanced (default) |
+| `nova` | Warm, conversational |
+| `shimmer` | Soft, gentle |
+| `echo` | Clear, measured |
+| `onyx` | Deep, authoritative |
+| `fable` | Expressive, storytelling |
+| `ash` | Light, airy |
+| `sage` | Calm, thoughtful |
+| `coral` | Friendly, upbeat |
+
+### Response
+
+On success, returns binary `audio/mpeg` data. Play it directly or save it to a file.
+
+| Status | Meaning |
+|---|---|
+| `200` | MP3 audio bytes |
+| `400` | `text` was missing, or OpenAI TTS failed |
+
+<Warning>
+The response body is raw binary, not JSON. Do not attempt to parse it as text.
+</Warning>
+
+<CodeGroup>
+
+```bash Save to file
+curl --request POST \
+  --url http://localhost:8787/api/tts \
+  --header 'Content-Type: application/json' \
+  --data '{"text": "你好，欢迎学习普通话！", "voice": "nova"}' \
+  --output greeting.mp3
+```
+
+```bash Play directly (macOS)
+curl --request POST \
+  --url http://localhost:8787/api/tts \
+  --header 'Content-Type: application/json' \
+  --data '{"text": "你好", "voice": "alloy"}' \
+  --silent | afplay -
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8787/api/tts', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ text: '你好，欢迎学习普通话！', voice: 'nova' })
+});
+
+const audioBlob = await response.blob();
+const url = URL.createObjectURL(audioBlob);
+const audio = new Audio(url);
+audio.play();
+```
+
+</CodeGroup>
+
+### Error response
+
+```json 400
+{
+  "error": "missing text"
+}
+```
+
+```json 400
+{
+  "error": "OpenAI TTS failed",
+  "detail": "<error message from OpenAI>"
+}
+```

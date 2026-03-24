@@ -1,0 +1,98 @@
+---
+title: "Realtime conversation"
+description: "Low-latency, streaming Mandarin practice over WebRTC using the OpenAI Realtime API."
+---
+
+The **Realtime** panel offers a WebRTC-based alternative to the standard hold-to-talk flow. It connects directly to the OpenAI Realtime API using an ephemeral token, delivering streaming audio responses with lower latency than the standard TTS pipeline.
+
+## When to use realtime mode
+
+Realtime mode is best for **hands-free back-and-forth speaking practice** where you want the conversation to feel as natural as possible. Because audio streams continuously, there is no noticeable pause between speaking and hearing a response.
+
+Use the [standard conversation mode](/features/conversation) when you want:
+- More control over the exact voice used
+- A visible multi-script display (Hanzi + Pinyin + English) per turn
+- Easier debugging of individual turns
+- Lower API cost per session
+
+## Standard mode vs. realtime mode
+
+<Tabs>
+  <Tab title="Realtime (WebRTC)">
+    - Streaming WebRTC audio, lowest latency
+    - Models: `gpt-4o-realtime-preview` or `gpt-4o-mini-realtime-preview`
+    - Voice selection available for full models; not supported when the mini toggle is on
+    - Live transcript displayed as interim and final segments
+    - Transcripts forwarded to the main conversation panel via `hb-realtime-transcript` event
+    - API: `POST /api/realtime-session` issues an ephemeral token
+  </Tab>
+  <Tab title="Standard (Whisper + TTS)">
+    - Hold-to-talk → Whisper STT → chat completion → OpenAI TTS
+    - Slightly higher latency per turn
+    - Full multi-script display (Hanzi, Pinyin, English)
+    - Voice and model easily configurable
+    - Browser TTS fallback if OpenAI TTS is unavailable
+    - More debuggable: each step is a discrete HTTP request
+  </Tab>
+</Tabs>
+
+## How to start a realtime session
+
+<Steps>
+  <Step title="Choose a model">
+    Select `gpt-4o-realtime-preview` (higher quality) or `gpt-4o-mini-realtime-preview` (faster, lower cost) from the **Model** dropdown. Enable the **gpt-realtime-mini** toggle to use the mini model automatically.
+  </Step>
+  <Step title="Select a voice">
+    Pick from `alloy`, `sage`, `ash`, or `verse` in the **Voice** dropdown. Voice selection is disabled when the mini toggle is on — the mini model does not support custom voices.
+  </Step>
+  <Step title="Click Connect">
+    Click **Connect**. The panel sends a `POST /api/realtime-session` request to your Express server, which calls the OpenAI API to issue a short-lived ephemeral token. The token is used to authenticate the WebRTC connection directly from the browser.
+  </Step>
+  <Step title="Speak">
+    Once connected, your microphone is live. Speak in Mandarin or English. Click **● Mic LIVE** to mute the microphone; click again to unmute. The tutor's responses stream back as audio and appear as transcripts in the panel below.
+  </Step>
+  <Step title="Disconnect">
+    Click **Disconnect** to close the WebRTC peer connection and stop the microphone.
+  </Step>
+</Steps>
+
+## Ephemeral token flow
+
+To avoid exposing your OpenAI API key in the browser, Huayu Buddy uses a server-side token exchange:
+
+```text
+Browser  →  POST /api/realtime-session  →  Express server
+                                                  ↓
+                                         OpenAI API (issues ephemeral token)
+                                                  ↓
+Browser  ←  { client_secret: { value: "..." } }  ←  Express server
+```
+
+The browser then uses the ephemeral token to authenticate the SDP offer it sends directly to `https://api.openai.com/v1/realtime`.
+
+## Live transcripts
+
+The realtime panel shows a scrollable transcript area below the controls. Each entry is labeled **Interim** while the model is still speaking, and **Final** once the response completes.
+
+Transcripts are also forwarded to the main conversation panel by dispatching a `hb-realtime-transcript` custom window event, so both panels reflect the same exchange.
+
+## Avatar integration
+
+The realtime panel monitors the remote audio stream with a Web Audio `AnalyserNode`. When the tutor's audio level exceeds a threshold, it sets the global `isSpeaking` flag in the conversation store to `true`, which triggers [avatar lip-sync and blinking](/features/avatar) — the same as in standard mode.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection fails immediately">
+    Verify that `OPENAI_API_KEY` is set correctly in your `.env` file and that the Express server is running. The `/api/realtime-session` endpoint must be reachable from the browser.
+  </Accordion>
+  <Accordion title="No audio from the tutor">
+    Check that your browser has microphone and audio output permissions. Autoplay may be blocked — click anywhere on the page first to unlock audio, then reconnect.
+  </Accordion>
+  <Accordion title="Voice selection has no effect">
+    Custom voice selection is only supported when the **gpt-realtime-mini** toggle is off. Disable the toggle, then select your preferred voice before clicking **Connect**.
+  </Accordion>
+  <Accordion title="Transcripts look garbled or repeated">
+    The transcript processor includes noise filtering, repetition collapse, and Pinyin-noise removal. If you see persistent issues, check that the model's audio output language matches the session configuration.
+  </Accordion>
+</AccordionGroup>

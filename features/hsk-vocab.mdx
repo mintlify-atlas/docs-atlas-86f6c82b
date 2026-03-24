@@ -1,0 +1,94 @@
+---
+title: "HSK vocabulary"
+description: "Load HSK 1–5 word lists to shape the tutor's language, then review the vocabulary that came up in your conversations."
+---
+
+Huayu Buddy integrates the official HSK (Hanyu Shuiping Kaoshi) standard vocabulary lists so every practice session targets words appropriate for your level. You can load one or more HSK levels at a time, and the selected words are passed to the AI tutor as a vocabulary bias.
+
+## HSK levels
+
+<CardGroup cols={2}>
+  <Card title="HSK 1 — 150 words" icon="1">
+    Basic greetings, numbers, and everyday objects. Designed for total beginners.
+  </Card>
+  <Card title="HSK 2 — 300 words" icon="2">
+    Simple daily topics such as family, time, shopping, and transport.
+  </Card>
+  <Card title="HSK 3 — 600 words" icon="3">
+    Basic conversational fluency across a wider range of everyday situations.
+  </Card>
+  <Card title="HSK 4 — 1,200 words" icon="4">
+    Intermediate topics including work, education, news, and abstract concepts.
+  </Card>
+  <Card title="HSK 5 — 2,500 words" icon="5">
+    Advanced discussions, formal writing topics, and nuanced expression.
+  </Card>
+</CardGroup>
+
+## Word list source
+
+All HSK entries are loaded server-side from `HSK_1-5.xlsx`, an Excel workbook bundled with the application. Each row contains four fields:
+
+| Field | Description |
+|-------|-------------|
+| `hanzi` | Simplified Chinese characters |
+| `pinyin` | Romanized pronunciation with tone numbers or marks |
+| `english` | Brief English translation |
+| `level` | HSK level (1–5) |
+
+The server exposes these entries through the `/api/hsk` endpoint, which accepts a `levels` query parameter (e.g., `?levels=1,2`) to filter by level.
+
+## Selecting HSK levels in the UI
+
+<Steps>
+  <Step title="Open the HSK Vocabulary Loader">
+    The **HSK Vocabulary Loader** panel appears on the main screen. It shows level buttons for HSK 1–5.
+  </Step>
+  <Step title="Toggle levels">
+    Click one or more level buttons to select them. Selected levels are highlighted in green. Your selection is saved to `localStorage` and restored on the next visit.
+  </Step>
+  <Step title="Set a word limit">
+    Enter a number in the **Limit words** field to control how many words are sampled. The default is 60. A random sample is drawn from all words in the selected levels using a Fisher-Yates shuffle.
+  </Step>
+  <Step title="Preview the sample">
+    Click **Preview** to fetch and display the sampled words in a table showing level, Hanzi, Pinyin, and English. Click **Re-sample preview** to draw a new random set without changing your level selection.
+  </Step>
+  <Step title="Load vocabulary">
+    Click **Load preview set** to load exactly the words shown in the preview into the active session, or click **Load random** to fetch and load a fresh random sample immediately without previewing.
+  </Step>
+</Steps>
+
+<Tip>
+  Loading vocabulary from multiple levels at once is a good way to mix reinforcement of known words with new vocabulary. For example, select HSK 1 and HSK 2 together to keep the tutor anchored to beginner-friendly language while introducing new words.
+</Tip>
+
+## How vocabulary biases the tutor
+
+When vocabulary is loaded, the first 60 words are included in the system prompt sent to the AI model on each turn. The prompt instructs the tutor to prefer those words in its responses. This does not prevent the tutor from using other words — it simply increases the likelihood that loaded vocabulary appears in the conversation.
+
+The vocabulary bias is built into the `buildTutorPrompt` function in `src/shared/personaDefaults.js`.
+
+## HSK Review tab
+
+The **HSK Review** tab displays all tutor responses from the current session in a searchable table. It appears automatically after your first exchange.
+
+<CardGroup cols={2}>
+  <Card title="Review columns" icon="table">
+    Each row shows: timestamp, Hanzi, Pinyin, English, your response, and a Pinyin-overlap score.
+  </Card>
+  <Card title="Replay audio" icon="play">
+    Click **▶ ZH** to replay the Hanzi sentence with avatar lip-sync, or **▶ EN** to replay the English translation.
+  </Card>
+</CardGroup>
+
+### Filtering
+
+Type in the filter box to narrow the table by Hanzi, Pinyin, English, or your response text. The filter is case-insensitive.
+
+### Exporting
+
+Use **Export CSV (Filtered)** to download the currently visible rows, or **Export CSV (All)** to download the full session history. The CSV includes all columns plus a computed score column.
+
+<Note>
+  The review table is in-memory only. It clears when you refresh the page or click **Start Conversation** again. Export your session to CSV if you want to keep a record.
+</Note>

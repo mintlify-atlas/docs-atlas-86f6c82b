@@ -1,0 +1,81 @@
+---
+title: "Raspberry Pi"
+description: "Run Huayu Buddy on a Raspberry Pi as a web app or Electron desktop."
+---
+
+Huayu Buddy runs well on a Raspberry Pi for conversational practice. All speech processing (TTS and STT) is handled by the OpenAI API, so the Pi only needs enough compute to run Node.js and serve the React UI — the heavy lifting happens in the cloud.
+
+<Note>
+  The recommended deployment on Raspberry Pi is **web mode** (`npm run dev` or `npm run start:prod`), not Electron desktop. Web mode avoids Electron's GPU and sandbox requirements.
+</Note>
+
+## Prerequisites
+
+- Node.js 18 or higher (`node --version`)
+- An `OPENAI_API_KEY` in a `.env` file at the project root
+- A browser (Chromium is pre-installed on Raspberry Pi OS)
+
+## Web mode (recommended)
+
+<Steps>
+  <Step title="Clone and install">
+    ```bash
+    git clone https://github.com/pwobus/Mandarin-tutor-v4
+    cd huayu-buddy
+    npm install
+    ```
+  </Step>
+
+  <Step title="Create your .env file">
+    ```bash
+    OPENAI_API_KEY=sk-your_key_here
+    ```
+  </Step>
+
+  <Step title="Choose a start command">
+    <CodeGroup>
+      ```bash Development
+      npm run dev
+      ```
+
+      ```bash Production
+      npm run start:prod
+      ```
+    </CodeGroup>
+
+    - **Development** starts the React dev server on `:3000` and the Express API on `:8787`.
+    - **Production** builds React first, then serves everything from Express on `:8787`.
+  </Step>
+
+  <Step title="Open in the browser">
+    On the Pi itself, open Chromium and navigate to `http://localhost:3000` (dev) or `http://localhost:8787` (production).
+
+    To access from another device on your network, use the Pi's IP address:
+
+    ```
+    http://192.168.x.x:3000
+    ```
+  </Step>
+</Steps>
+
+## Electron desktop mode
+
+Electron works on Raspberry Pi in **development mode only**. The sandbox is disabled automatically when running on Linux, so you do not need to configure `chrome-sandbox` setuid permissions.
+
+```bash
+npm run electron:dev
+```
+
+<Warning>
+  Building a portable `.exe` on Raspberry Pi requires Wine for cross-platform packaging. This is a slow process on Pi hardware. Prefer building on a Windows machine and copying the `.exe` to the Pi if needed.
+</Warning>
+
+## Performance notes
+
+- **Conversation latency** is dominated by OpenAI API round-trip time, not Pi CPU speed.
+- **3D avatar rendering** (Three.js) runs in the browser. On lower-end Pi models you may want to reduce the browser window size or disable the avatar.
+- **HSK word loading** reads from `server/data/HSK_1-5.xlsx` at startup — this is a one-time file read and does not affect ongoing performance.
+
+## macOS note
+
+On macOS the standard Electron development workflow applies (`npm run electron:dev`). Distribution builds may require additional code signing; refer to the [Electron documentation](https://www.electronjs.org/docs/latest/tutorial/code-signing) for details.

@@ -1,0 +1,71 @@
+---
+title: "3D tutor avatar"
+description: "A head-only Three.js avatar that lip-syncs and blinks in real time as the tutor speaks."
+---
+
+Huayu Buddy renders a head-only 3D avatar using [Three.js](https://threejs.org) via the `@react-three/fiber` and `@react-three/drei` libraries. The avatar gives conversations a more immersive feel — like talking to a real tutor — by animating in response to audio playback.
+
+## The model
+
+The avatar is loaded from the file `public/head-avatar.glb`, a standard glTF binary model. It is preloaded at startup so the avatar is ready before your first conversation begins.
+
+The camera automatically fits to the model's bounding box on load and re-fits when the viewport is resized. You can fine-tune the framing using the overlay controls in the top-right corner of the avatar panel.
+
+| Control | What it does |
+|---------|--------------|
+| Zoom | Move the camera closer to or farther from the head |
+| Vertical | Shift the camera up or down relative to the eye line |
+| Tilt | Adjust the camera's vertical aim angle |
+| **Center** | Reset zoom and vertical offset to defaults |
+
+Camera settings are saved to `localStorage` so your framing preference persists across sessions.
+
+## Lip-sync visemes
+
+When the tutor speaks, the avatar's mouth animates using morph target (blend shape) weights. The animation is driven by an amplitude envelope that tracks the audio level in real time.
+
+The following morph targets are used for mouth movement:
+
+- `jawOpen`, `mouthOpen` — primary jaw and lip opening
+- `viseme_aa`, `viseme_oh`, `viseme_e`, `viseme_ih`, `viseme_uh` — vowel-shape visemes
+- `lipsTogetherU` — lip closure when amplitude is low
+
+Amplitude events are dispatched on the `hb-tts-level` custom window event by the TTS utility. When OpenAI TTS is active, precise per-frame amplitude data drives the animation. When the browser's Web Speech API fallback is used instead, a gentle sinusoidal fallback motion keeps the mouth moving naturally.
+
+<Note>
+  The avatar only animates the mouth shapes that exist in the loaded `.glb` model. If your model uses different morph target names, update the target lists in `Avatar.jsx`.
+</Note>
+
+## Natural blinking
+
+The avatar blinks automatically using a state machine that runs on every animation frame:
+
+1. The eyes close over approximately 80 ms.
+2. The eyes reopen over approximately 110 ms.
+3. The avatar waits 2.5–5.0 seconds (random) before blinking again.
+
+Blink state is applied to any morph targets named `eyeBlinkLeft`, `eyeBlinkRight`, `EyeBlinkLeft`, `EyeBlinkRight`, `blink`, or `eyesClosed` found in the model.
+
+## Speaking state
+
+The avatar reacts to the global `isSpeaking` flag in the conversation store (`useConversationStore`). This flag is set to `true` when the TTS audio starts playing and `false` when it finishes. Both the standard TTS mode and the realtime WebRTC panel drive this same flag, so the avatar animates correctly in either mode.
+
+```js
+// src/store/useConversationStore.js
+isSpeaking: false,
+setIsSpeaking: (flag) => set({ isSpeaking: !!flag }),
+```
+
+Components that need to react to speaking state can subscribe to `isSpeaking` directly from the store:
+
+```js
+const { isSpeaking } = useConversationStore();
+```
+
+## Lighting
+
+The scene uses three lights to give the head a natural appearance:
+
+- Ambient light at intensity 0.7 for overall fill
+- Key directional light at `[2, 4, 3]` intensity 0.8
+- Rim directional light at `[-2, 2, -2]` intensity 0.25

@@ -1,0 +1,121 @@
+---
+title: "Electron desktop app"
+description: "Package and run Huayu Buddy as a standalone Windows desktop application."
+---
+
+The Electron wrapper bundles the React UI and the Express API into a single desktop process. The app window communicates with an embedded Express server on `127.0.0.1` — no external server required.
+
+## Development mode
+
+Development mode gives you hot-reload for React and live Express restarts alongside a real Electron window.
+
+<Steps>
+  <Step title="Install dependencies">
+    ```bash
+    npm install
+    ```
+  </Step>
+
+  <Step title="Start all three processes">
+    ```bash
+    npm run electron:dev
+    ```
+
+    The dev runner starts three processes concurrently:
+
+    | Process | Port | Label |
+    |---------|------|-------|
+    | React dev server | `:3000` | `UI` |
+    | Express API | `:8787` | `API` |
+    | Electron window | — | `ELECTRON` |
+
+    Electron waits for both servers to be ready before opening the window.
+  </Step>
+</Steps>
+
+<Note>
+  On headless Linux (no `DISPLAY` or `WAYLAND_DISPLAY` set) the Electron launcher is skipped automatically. Set `ELECTRON_DEV_SKIP=0` to force it.
+</Note>
+
+## Test the production build
+
+Run the app against a production React build without creating an installer. Useful for catching build-time issues before packaging.
+
+```bash
+npm run electron:start
+```
+
+This command builds the React app (`build/`), then launches Electron pointing at the embedded Express server. No React dev server is involved.
+
+## Build a portable executable
+
+<Warning>
+  This command must be run on Windows for native packaging. On Linux you can cross-compile using Wine, but native Windows builds are recommended.
+</Warning>
+
+<Steps>
+  <Step title="Run the build command">
+    ```bash
+    npm run electron:build
+    ```
+
+    Internally this runs:
+    1. `npm run build` — compiles the React app into `build/`
+    2. `electron-builder --win portable --x64` — packages everything into a single `.exe`
+  </Step>
+
+  <Step title="Find the output file">
+    The portable executable is written to:
+
+    ```
+    dist/HuayuBuddy-4.0.0.exe
+    ```
+
+    The filename follows the `artifactName` pattern `HuayuBuddy-{version}.exe` defined in `package.json`.
+  </Step>
+</Steps>
+
+## Features of the portable executable
+
+- **No installer required** — run the `.exe` directly from any folder
+- **No console window** — the app launches silently in the background
+- **Self-contained** — Node.js runtime and all dependencies are bundled
+- **Embedded Express server** — binds to `127.0.0.1` on a random available port at startup
+
+## API key configuration
+
+The portable executable reads `.env` from the directory that contains the `.exe` file (exposed as `PORTABLE_EXECUTABLE_DIR` by Electron). Place your `.env` file next to the executable:
+
+```
+dist/
+├── HuayuBuddy-4.0.0.exe
+└── .env                  ← place your API key here
+```
+
+Example `.env`:
+
+```bash
+OPENAI_API_KEY=sk-your_key_here
+```
+
+<Tip>
+  The server also checks the project root and `server/` directory for `.env`, so development workflows work without moving any files.
+</Tip>
+
+## Platform notes
+
+<Tabs>
+  <Tab title="Windows">
+    Run `npm run electron:build` directly. No additional tooling is needed.
+  </Tab>
+
+  <Tab title="Linux">
+    Development mode (`npm run electron:dev`) works out of the box — the Chrome sandbox is disabled automatically.
+
+    For production builds targeting Windows `.exe` output, install [Wine](https://www.winehq.org/) and then run `npm run electron:build`. Alternatively, build on a Windows machine.
+  </Tab>
+
+  <Tab title="macOS">
+    Standard Electron development workflow applies. Distribution builds may require additional code signing depending on your target audience.
+  </Tab>
+</Tabs>

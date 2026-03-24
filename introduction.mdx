@@ -1,0 +1,62 @@
+---
+title: Introduction
+description: Huayu Buddy is an AI-powered Mandarin Chinese conversation tutor with a 3D avatar, real-time speech, and HSK-aligned vocabulary practice.
+---
+
+Huayu Buddy is a Mandarin Chinese learning app that puts you in a live spoken conversation with an AI tutor. You speak, the tutor responds in natural Mandarin with audio, Hanzi, and Pinyin — and gently corrects your mistakes along the way.
+
+## Key features
+
+<Columns cols={2}>
+  <Card title="Real spoken practice" icon="microphone">
+    Hold-to-talk microphone input with instant spoken responses powered by OpenAI TTS. Browser TTS fallback ensures audio always works.
+  </Card>
+  <Card title="3D tutor avatar" icon="user">
+    A head-only 3D model with lip-sync visemes and natural blinking, built with Three.js, so conversations feel face-to-face.
+  </Card>
+  <Card title="Multi-script display" icon="book-open">
+    Every response shows Hanzi, Pinyin with tone marks, and optional English translation so you can tune the challenge to your level.
+  </Card>
+  <Card title="HSK-focused vocabulary" icon="graduation-cap">
+    Choose HSK levels 1–5 to shape conversation topics. The built-in HSK Review tab surfaces words from your session for follow-up study.
+  </Card>
+  <Card title="Realtime WebRTC mode" icon="bolt">
+    Stream low-latency conversation using `gpt-4o-realtime-preview` or `gpt-realtime-mini` for hands-free back-and-forth practice.
+  </Card>
+  <Card title="Electron desktop app" icon="desktop">
+    Bundle the entire app — React UI and Express API — into a self-contained Windows `.exe` for offline-capable use.
+  </Card>
+</Columns>
+
+## Architecture overview
+
+Huayu Buddy is composed of three main layers:
+
+**React UI (`/src`)**
+The browser-side interface handles conversation flow, the HSK vocabulary browser, and the 3D avatar rendered with Three.js and `@react-three/fiber`. A separate Realtime panel manages WebRTC-based streaming chat.
+
+**Express API (`/server`)**
+A Node.js/Express server exposes the AI endpoints that the UI calls:
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/chat` | Standard chat completion (GPT) |
+| `POST /api/tts` | Text-to-speech audio generation |
+| `POST /api/stt` | Speech-to-text transcription (Whisper) |
+| `POST /api/realtime-session` | Issues ephemeral Realtime API tokens |
+| `GET /api/hsk` | Returns HSK word list filtered by level |
+| `GET /api/health` | OpenAI connectivity health check |
+
+**Electron wrapper (`/electron`)**
+Bundles the React build and Express server into a single desktop executable. Manages the application window, system tray, and packaging for Windows.
+
+## Next steps
+
+<Columns cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Clone the repo and start a conversation in under five minutes.
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration">
+    Set your API key and customize models, voices, and ports.
+  </Card>
+</Columns>

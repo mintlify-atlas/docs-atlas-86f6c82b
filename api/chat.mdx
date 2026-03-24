@@ -1,0 +1,179 @@
+---
+title: "Chat completion"
+description: "Send a conversation to the AI tutor and receive a reply, either as a complete response or as a stream of tokens."
+---
+
+Two endpoints handle chat: a standard blocking request and a streaming variant that uses Server-Sent Events.
+
+## POST /api/chat
+
+Send a list of messages and receive the full completion in one response.
+
+### Request body
+
+<ParamField body="messages" type="object[]" required>
+  Array of OpenAI chat message objects. Each object must have a `role` (`system`, `user`, or `assistant`) and a `content` string.
+</ParamField>
+
+<ParamField body="model" type="string">
+  The OpenAI model to use. Defaults to the `OPENAI_CHAT_MODEL` environment variable, or `gpt-4o-mini` if unset.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="0.6">
+  Sampling temperature between `0` and `2`. Higher values produce more varied output.
+</ParamField>
+
+### Response
+
+Returns the full OpenAI chat completion object.
+
+<ResponseField name="id" type="string">
+  Unique identifier for the completion.
+</ResponseField>
+
+<ResponseField name="choices" type="object[]">
+  <Expandable title="properties">
+    <ResponseField name="message" type="object">
+      <Expandable title="properties">
+        <ResponseField name="role" type="string">
+          Always `assistant`.
+        </ResponseField>
+        <ResponseField name="content" type="string">
+          The tutor's reply text.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="finish_reason" type="string">
+      Reason the model stopped generating, e.g. `stop`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token usage counters for the request.
+  <Expandable title="properties">
+    <ResponseField name="prompt_tokens" type="number">Tokens in the prompt.</ResponseField>
+    <ResponseField name="completion_tokens" type="number">Tokens in the completion.</ResponseField>
+    <ResponseField name="total_tokens" type="number">Combined total.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<CodeGroup>
+
+```bash cURL
+curl --request POST \
+  --url http://localhost:8787/api/chat \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "messages": [
+      {"role": "system", "content": "You are a Mandarin tutor."},
+      {"role": "user", "content": "How do I say hello?"}
+    ],
+    "temperature": 0.6
+  }'
+```
+
+```json Response
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "model": "gpt-4o-mini",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "你好\nnǐ hǎo\nHello"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 24,
+    "completion_tokens": 12,
+    "total_tokens": 36
+  }
+}
+```
+
+</CodeGroup>
+
+---
+
+## POST /api/chat/stream
+
+Same request body as `/api/chat`. The server responds with a `text/event-stream` and pushes tokens as they arrive.
+
+### Request body
+
+Identical to [POST /api/chat](#post-api-chat).
+
+### Response format
+
+Each SSE message is a `data:` line followed by a blank line. Three event shapes are possible:
+
+| Event | Shape | Description |
+|---|---|---|
+| Token delta | `{"delta": "<text>"}` | Incremental content from the model |
+| Done | `{"done": true}` | Stream finished successfully |
+| Error | `{"error": "<message>"}` | An error occurred mid-stream |
+
+<Note>
+The connection is kept open with `Connection: keep-alive`. Close the connection once you receive `{"done": true}`.
+</Note>
+
+<CodeGroup>
+
+```bash cURL
+curl --request POST \
+  --url http://localhost:8787/api/chat/stream \
+  --header 'Content-Type: application/json' \
+  --no-buffer \
+  --data '{
+    "messages": [
+      {"role": "user", "content": "Teach me the word for water."}
+    ]
+  }'
+```
+
+```text SSE response
+data: {"delta":"水"}
+
+data: {"delta":"\n"}
+
+data: {"delta":"shuǐ"}
+
+data: {"delta":"\n"}
+
+data: {"delta":"Water"}
+
+data: {"done":true}
+
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8787/api/chat/stream', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: 'Teach me the word for water.' }]
+  })
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { value, done } = await reader.read();
+  if (done) break;
+  const lines = decoder.decode(value).split('\n');
+  for (const line of lines) {
+    if (!line.startsWith('data: ')) continue;
+    const payload = JSON.parse(line.slice(6));
+    if (payload.done) break;
+    if (payload.delta) process.stdout.write(payload.delta);
+  }
+}
+```
+
+</CodeGroup>

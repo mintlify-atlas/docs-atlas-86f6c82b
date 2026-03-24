@@ -1,0 +1,125 @@
+---
+title: "Tutor persona"
+description: "Choose a built-in preset or fine-tune strictness, humor, proactivity, and English output to match your learning style."
+---
+
+The tutor persona controls how the AI presents itself — its name, tone, teaching style, and how much English it uses in responses. Settings are applied immediately and persist in `localStorage` between sessions.
+
+## Built-in presets
+
+Three presets are available out of the box, defined in `src/shared/personaDefaults.js`.
+
+<Tabs>
+  <Tab title="Friendly Coach">
+    **Tone:** warm, encouraging
+
+    The default persona. Speaks slowly, always provides English translations, and gently encourages you to keep going.
+
+    | Parameter | Value |
+    |-----------|-------|
+    | Strictness | 30 / 100 |
+    | Humor | 40 / 100 |
+    | Proactivity | 65 / 100 |
+    | English output | always |
+    | Speed | slow |
+    | Default topic | daily life |
+    | Tutor name | Huayu Buddy |
+  </Tab>
+  <Tab title="Cheerful Partner">
+    **Tone:** cheerful, playful but respectful
+
+    A high-energy conversation partner. Very proactive at introducing new topics and bringing humor into the exchange.
+
+    | Parameter | Value |
+    |-----------|-------|
+    | Strictness | 15 / 100 |
+    | Humor | 70 / 100 |
+    | Proactivity | 80 / 100 |
+    | English output | always |
+    | Speed | slow |
+    | Default topic | hobbies |
+    | Tutor name | Huayu Buddy |
+  </Tab>
+  <Tab title="Strict Teacher">
+    **Tone:** clear, concise, professional
+
+    A no-nonsense instructor that focuses on accuracy and precision. Lower humor, higher strictness, and a faster speaking pace.
+
+    | Parameter | Value |
+    |-----------|-------|
+    | Strictness | 75 / 100 |
+    | Humor | 10 / 100 |
+    | Proactivity | 60 / 100 |
+    | English output | always |
+    | Speed | normal |
+    | Default topic | classroom |
+    | Tutor name | Huayu Laoshi |
+  </Tab>
+</Tabs>
+
+To apply a preset, open the **Persona** panel, select a preset from the dropdown, or click **Reset default** to return to Friendly Coach.
+
+## Persona parameters
+
+Every parameter can be adjusted independently after applying a preset.
+
+<AccordionGroup>
+  <Accordion title="Strictness (0–100)">
+    Controls how much the tutor corrects your Mandarin. At low values the tutor overlooks minor errors to keep the conversation flowing. At high values it points out mistakes and asks you to try again more often.
+  </Accordion>
+  <Accordion title="Humor (0–100)">
+    Sets how playful and light-hearted the tutor's responses are. Higher values produce more jokes, wordplay, and informal language. Lower values keep the tutor focused and businesslike.
+  </Accordion>
+  <Accordion title="Proactivity (0–100)">
+    Determines how often the tutor introduces new topics, redirects the conversation, or asks follow-up questions unprompted. Higher values make the tutor more talkative and initiative-taking.
+  </Accordion>
+  <Accordion title="English output">
+    Controls whether the tutor includes an English translation line in each response.
+
+    | Value | Behavior |
+    |-------|----------|
+    | `always` | Every response includes 3 lines: Hanzi, Pinyin, and English |
+    | `never` | Every response includes 2 lines: Hanzi and Pinyin only |
+    | `auto` | The model decides whether English is helpful on a per-turn basis |
+  </Accordion>
+  <Accordion title="Speed">
+    Sets the pacing instruction in the system prompt. Options are `slow`, `normal`, and `fast`. This influences sentence length and speaking rhythm rather than the TTS playback rate.
+  </Accordion>
+  <Accordion title="Length">
+    Sets the target response length. Options are `short`, `normal`, and `long`. Shorter responses are better for beginners; longer responses suit intermediate learners who want more exposure.
+  </Accordion>
+</AccordionGroup>
+
+## The tutor always asks a question
+
+Regardless of preset or custom settings, the system prompt instructs the tutor to **always end each turn with a follow-up question**. This keeps the conversation moving and ensures you always have something to respond to.
+
+## Output format
+
+The `buildSystemPrompt` function in `src/shared/personaDefaults.js` constructs the system prompt injected at the start of every chat completion request. The core output format rules it generates look like this:
+
+```text
+# english = 'always'
+On each turn, output exactly 3 lines and nothing else:
+  Line 1: Hanzi
+  Line 2: Pinyin
+  Line 3: English (brief)
+
+# english = 'never'
+On each turn, output exactly 2 lines and nothing else:
+  Line 1: Hanzi
+  Line 2: Pinyin
+  Do NOT add any English translation unless the learner explicitly asks for it.
+
+# english = 'auto'
+On each turn, output 2–3 lines:
+  Line 1: Hanzi
+  Line 2: Pinyin
+  Line 3: English (brief) if learner might need it
+```
+
+The prompt also instructs the model not to include labels like `Hanzi:` or `Pinyin:` — only the raw lines.
+
+## Custom name and topic
+
+You can give the tutor any name and set a free-text topic focus directly in the **Persona** panel. The name appears in the system prompt as the tutor's identity, and the topic biases which subjects the tutor gravitates toward when asking follow-up questions.

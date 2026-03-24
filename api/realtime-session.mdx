@@ -1,0 +1,119 @@
+---
+title: "Realtime session"
+description: "Create an ephemeral OpenAI Realtime API token for low-latency voice conversations."
+---
+
+## POST /api/realtime-session
+
+Issues a short-lived session token from the [OpenAI Realtime API](https://platform.openai.com/docs/guides/realtime). The client uses this token to open a WebSocket or WebRTC connection directly to OpenAI without exposing the server-side API key.
+
+### How it works
+
+The server calls `POST https://api.openai.com/v1/realtime/sessions` with the configured model, voice, and tutor instructions, then forwards the ephemeral token JSON to the client. The token is valid for a single session.
+
+The tutor instructions are generated from the default persona (`friendlyCoach`). When `allowEnglish` is `false`, the instructions override the persona's English policy to `never`, so the tutor responds only in Simplified Chinese with pinyin support.
+
+<Warning>
+This endpoint requires `OPENAI_API_KEY` to be set on the server. It returns `400` if the key is missing or if the OpenAI request fails.
+</Warning>
+
+### Request body
+
+<ParamField body="model" type="string">
+  Realtime model name. If omitted, the server chooses based on `useMini`:
+  - `useMini: false` → `gpt-4o-mini-realtime-preview`
+  - `useMini: true` → `gpt-realtime-mini`
+
+  You can also pass `"gpt-realtime-mini"` here directly to activate mini mode.
+</ParamField>
+
+<ParamField body="useMini" type="boolean" default="false">
+  When `true`, selects the smaller `gpt-realtime-mini` model. Voice selection is only applied when this is `false`.
+</ParamField>
+
+<ParamField body="voice" type="string">
+  Voice name for the realtime session. Only applied when `useMini` is `false`. Refer to the [Text to speech](/api/tts) page for the list of supported voices.
+</ParamField>
+
+<ParamField body="allowEnglish" type="boolean" default="false">
+  When `true`, the tutor may respond in English when helpful. When `false` (the default), the tutor is instructed to respond only in Simplified Chinese plus pinyin, unless the learner explicitly asks for English.
+</ParamField>
+
+### Response
+
+The raw ephemeral session token JSON from OpenAI, passed through unchanged.
+
+<ResponseField name="id" type="string">
+  Session identifier.
+</ResponseField>
+
+<ResponseField name="client_secret" type="object">
+  Ephemeral credential used by the client to connect to the Realtime API.
+  <Expandable title="properties">
+    <ResponseField name="value" type="string">
+      The secret token value. Treat this as a password — do not log or store it.
+    </ResponseField>
+    <ResponseField name="expires_at" type="number">
+      Unix timestamp (seconds) when the token expires.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  The model that will be used for the session.
+</ResponseField>
+
+<ResponseField name="voice" type="string">
+  The voice selected for the session (if applicable).
+</ResponseField>
+
+<CodeGroup>
+
+```bash Default (Chinese only)
+curl --request POST \
+  --url http://localhost:8787/api/realtime-session \
+  --header 'Content-Type: application/json' \
+  --data '{}'
+```
+
+```bash With voice and English allowed
+curl --request POST \
+  --url http://localhost:8787/api/realtime-session \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "voice": "nova",
+    "allowEnglish": true
+  }'
+```
+
+```bash Mini model
+curl --request POST \
+  --url http://localhost:8787/api/realtime-session \
+  --header 'Content-Type: application/json' \
+  --data '{"useMini": true}'
+```
+
+```json Response
+{
+  "id": "sess_abc123",
+  "object": "realtime.session",
+  "model": "gpt-4o-mini-realtime-preview",
+  "voice": "nova",
+  "instructions": "...",
+  "client_secret": {
+    "value": "ek-...",
+    "expires_at": 1711000000
+  }
+}
+```
+
+</CodeGroup>
+
+### Error response
+
+```json 400
+{
+  "error": "realtime session failed",
+  "detail": "OPENAI_API_KEY missing"
+}
+```
