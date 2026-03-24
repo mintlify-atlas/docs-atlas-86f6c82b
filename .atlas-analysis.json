@@ -1,0 +1,86 @@
+{
+  "projectType": "saas",
+  "projectName": "Huayu Buddy",
+  "projectDescription": "An AI-powered Mandarin Chinese conversation tutor with a 3D avatar, HSK vocab practice, and multi-platform support (web and Electron desktop).",
+  "theme": "almond",
+  "primaryColor": "#040404",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "configuration"]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/conversation",
+              "features/avatar",
+              "features/hsk-vocab",
+              "features/persona",
+              "features/realtime"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/web",
+              "deployment/electron",
+              "deployment/raspberry-pi"
+            ]
+          },
+          {
+            "group": "Troubleshooting",
+            "pages": ["troubleshooting"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/overview",
+              "api/chat",
+              "api/tts",
+              "api/stt",
+              "api/realtime-session",
+              "api/hsk",
+              "api/health"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time spoken Mandarin conversation using OpenAI GPT-4o Realtime API (WebRTC)",
+    "3D animated tutor avatar with lip-sync visemes and natural blinking (Three.js)",
+    "Multi-script display: Hanzi, Pinyin with tone marks, and optional English translation",
+    "HSK 1–5 vocabulary practice with built-in word list browser and review tab",
+    "Customizable tutor persona (Friendly Coach, Cheerful Partner, Strict Teacher)",
+    "TTS via OpenAI (with browser TTS fallback) and STT via Whisper",
+    "Electron desktop app packaged as a single portable Windows .exe",
+    "Cross-platform support: Windows, Linux (including Raspberry Pi), and macOS"
+  ],
+  "publicApiSurface": [
+    "POST /api/chat — send messages to GPT chat completion",
+    "POST /api/chat/stream — streaming SSE chat completion",
+    "POST /api/tts — synthesize speech audio from text",
+    "POST /api/whisper — transcribe audio via Whisper",
+    "POST /api/stt — speech-to-text transcription (alias for /api/whisper with language header)",
+    "POST /api/realtime-session — obtain ephemeral token for OpenAI Realtime API",
+    "GET /api/hsk?levels=1,2,3 — fetch HSK vocabulary items by level",
+    "GET /api/health — check OpenAI connectivity and TTS availability",
+    "GET /api/diag/fs — filesystem diagnostics for debugging deployments",
+    "buildSystemPrompt(settings, vocab) — builds the AI system prompt for the tutor",
+    "buildTutorPrompt(settings, {vocabulary, vocabBiasText}) — full tutor prompt with vocab bias",
+    "createApp(options) — programmatic Express app factory",
+    "startServer(options) — start the Express server programmatically"
+  ]
+}
