@@ -74,7 +74,7 @@ The **HSK Review** tab displays all tutor responses from the current session in 
 
 <CardGroup cols={2}>
   <Card title="Review columns" icon="table">
-    Each row shows: timestamp, Hanzi, Pinyin, English, your response, and a Pinyin-overlap score.
+    Each row shows: row number, timestamp, Hanzi, Pinyin, English, your response, a Pinyin-overlap score (%), and replay buttons.
   </Card>
   <Card title="Replay audio" icon="play">
     Click **▶ ZH** to replay the Hanzi sentence with avatar lip-sync, or **▶ EN** to replay the English translation.
@@ -92,3 +92,43 @@ Use **Export CSV (Filtered)** to download the currently visible rows, or **Expor
 <Note>
   The review table is in-memory only. It clears when you refresh the page or click **Start Conversation** again. Export your session to CSV if you want to keep a record.
 </Note>
+
+## Vocabulary from PDF or text
+
+In addition to the built-in HSK lists, you can load vocabulary from a PDF file or by pasting text directly. The **Vocabulary** panel appears below the HSK Loader on the main screen.
+
+<Tabs>
+  <Tab title="Upload PDF">
+    Click **Upload PDF** and select a PDF file containing vocabulary. The parser extracts lines containing Hanzi, Pinyin, and English — each on the same line, separated by tabs, spaces, or dashes. For example:
+
+    ```
+    你好    nǐ hǎo    hello
+    我叫 - wǒ jiào - my name is
+    ```
+
+    If the PDF is parsed but no vocabulary rows are found, try the **Paste text/CSV** tab instead.
+  </Tab>
+  <Tab title="Paste text / CSV">
+    Switch to the **Paste text / CSV** tab and paste vocabulary directly into the text area. The parser accepts tab-separated, space-separated, or dash-separated lines:
+
+    ```
+    你好	nǐ hǎo	hello
+    谢谢	xiè xie	thank you
+    ```
+
+    Click **Import parsed rows** to load the preview into the active session.
+  </Tab>
+  <Tab title="Sample vocabulary">
+    Click **Use sample** to load a short built-in vocabulary list for testing. This is useful for confirming that the conversation and avatar are working before loading your own content.
+  </Tab>
+</Tabs>
+
+## Custom persona presets
+
+The **Settings** drawer (accessible via the gear icon) lets you save your current persona and model settings as a named preset, then reload them later.
+
+- Click **Save preset** after naming the configuration.
+- Click **Apply** next to a saved preset to restore it.
+- Use **Export** / **Import** to share presets as JSON files between devices.
+
+Presets include: chat, STT, and TTS model choices; voice selection; English/pacing toggles; difficulty and topic settings.

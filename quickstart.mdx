@@ -74,7 +74,7 @@ Huayu Buddy offers two modes for spoken interaction. You can switch between them
 
 The default mode uses a request/response cycle:
 
-1. You record audio by holding **Hold to Talk**. The recording is sent to `POST /api/stt` where OpenAI Whisper transcribes it.
+1. You record audio by holding **Hold to Talk**. The recording is sent to `POST /api/whisper` where OpenAI Whisper transcribes it.
 2. The transcript is sent to `POST /api/chat`, which calls GPT to generate a Mandarin reply.
 3. The reply text is sent to `POST /api/tts`, which returns an MP3 from OpenAI TTS.
 4. The browser plays the audio and renders Hanzi + Pinyin subtitles.

@@ -15,10 +15,10 @@ Conversation mode is the core learning loop in Huayu Buddy. You speak (or type) 
     Click **Start Conversation**. The tutor sends a warm greeting in Mandarin and asks you an opening question to kick off the dialogue.
   </Step>
   <Step title="Hold to talk">
-    Press and hold the **Hold to Talk** button. Speak in Mandarin or English. Release the button when you're done — your audio is sent to OpenAI Whisper for speech-to-text transcription.
+    Press and hold the **Hold to Talk** button. Speak in Mandarin or English. Release the button when you're done — your audio is sent to `POST /api/whisper` where OpenAI Whisper transcribes it.
   </Step>
   <Step title="AI processes your input">
-    The transcribed text is forwarded to a chat completion model (`gpt-4o-mini` by default) along with the system prompt built from your persona settings and loaded vocabulary. The last 8 turns of conversation history are included for context.
+    The transcribed text is forwarded to `POST /api/chat` with the `gpt-4o-mini` model (hardcoded in `Conversation.jsx`), the system prompt built from your persona settings, and the last 8 turns of conversation history for context.
   </Step>
   <Step title="Response is rendered">
     The tutor's reply is parsed into Hanzi sentences paired with Pinyin. An English translation is appended when the persona's English policy is set to `always` or `auto`. The response appears in the chat panel.
@@ -64,7 +64,7 @@ Browsers require a user gesture before audio can play. Huayu Buddy automatically
 
 <AccordionGroup>
   <Accordion title="Which model handles the chat completion?">
-    `gpt-4o-mini` by default. The model is specified in the API call inside `Conversation.jsx`. You can swap it by modifying the server-side chat endpoint or by updating the model ID in the fetch payload.
+    `gpt-4o-mini` — the model is hardcoded in the fetch call inside `Conversation.jsx`. The server's `OPENAI_CHAT_MODEL` environment variable only affects requests made directly to `/api/chat` without a `model` field; the UI always sends `"model": "gpt-4o-mini"` explicitly.
   </Accordion>
   <Accordion title="What happens if the recording is too short?">
     Recordings shorter than roughly 120 ms are discarded and the status bar displays *Recording too short — try again*. Hold the button for at least half a second to ensure a usable recording.
